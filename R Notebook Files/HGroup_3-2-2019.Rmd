@@ -1,0 +1,147 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+Code based on tutorial: https://shiny.rstudio.com/tutorial/written-tutorial/lesson5/
+Hello! Today we will start working with R Shiny in mapping our CDC data. There are some bugs I will need to work out, but please take a look at the code below and let me know if you have any questions. 
+
+It would be great if you could try to collaborate and build upon this model, all in hopes of creating an app and/or report by the end of this semester. 
+
+```{r}
+#get packages
+require(usmap)
+require(data.table)
+require(mapdata)
+require(ggmap)
+require(dplyr)
+require(shiny)
+require(maps)
+require(mapproj)
+
+#preparing the data for use in app - you might need to re-download the CDC2017 data, which can be found on our Google Drive as "CDC2017.csv": https://drive.google.com/drive/folders/13UXfUbcrgj9KVNGILKZctapu-Ap5Kx00?usp=sharing
+states <- count(CDC2017,STATE)
+povperstate  <- CDC2017 %>%
+     filter(INCPOV1 == 3) %>%
+     count(STATE)
+vacperstate  <- CDC2017 %>%
+     filter(P_NUMFLU >=1) %>%
+     count(STATE)
+colnames(povperstate) <- c("states", "POV")
+colnames(vacperstate) <- c("states", "VAC")
+
+state <- c("ALABAMA","ALASKA","ARIZONA","ARKANSAS", "CALIFORNIA", "COLORADO", "CONNECTICUT" ,"DELAWARE","DISTRICT OF COLUMBIA" ,"FLORIDA","GEORGIA" ,"HAWAII","IDAHO","ILLINOIS", "INDIANA","IOWA","KANSAS", "KENTUCKY", "LOUISIANA", "MAINE" ,"MARYLAND", "MASSACHUSETTS" ,"MICHIGAN" ,"MINNESOTA", "MISSISSIPPI" ,"MISSOURI" ,"MONTANA" ,"NEBRASKA", "NEVADA","NEW HAMPSHIRE", "NEW JERSEY","NEW MEXICO" ,"NEW YORK", "NORTH CAROLINA" ,"NORTH DAKOTA", "OHIO",
+"OKLAHOMA", "OREGON", "PENNSYLVANIA", "RHODE ISLAND", "SOUTH CAROLINA", "SOUTH DAKOTA", "TENNESSEE", "TEXAS","UTAH","VERMONT"," VIRGINIA", "WASHINGTON", "WEST VIRGINIA", "WISCONSIN", "WYOMING")
+states <- cbind(state,states, vacperstate$VAC, povperstate$POV)
+colnames(states) <- c("State", "Count", "n", "VAC", "POV")
+
+states$State <- tolower(states$State)
+states <- mutate(states, PerVac = VAC/n)
+states <- mutate(states, PerPov = POV/n)
+states$PerVac <- round(states$PerVac, digits = 3) * 100
+states$PerPov <- round(states$PerPov, digits = 3) * 100
+states <- states[-c(2,9,12),]
+
+```
+
+
+```{r}
+#relate data to coordinates (in progress)
+regions <- data.table(map_data("state"))
+setkey(regions,region)
+
+states <- data.table(states)
+setkey(states,State)
+map.df <- regions[states]
+```
+
+
+```{r}
+#helper function percent_map, based on code from here: https://gist.github.com/csmatyi/2c9bbe8745b6b304f8a3000bc9e82d21#file-helpers-r-L16
+
+#install.packages("usmap")
+percent_map <- function(var, color, legend.title, min = 0, max = 100) {
+
+  # generate vector of fill colors for map
+  shades <- colorRampPalette(c("white", color))(100)
+  
+  # constrain gradient to percents that occur between min and max
+  var <- pmax(var, min)
+  var <- pmin(var, max)
+  percents <- as.integer(cut(var, 100, 
+    include.lowest = TRUE, ordered = TRUE))
+  fills <- shades[percents]
+
+  # overlay state borders
+ map("state", fill = TRUE, col = fills, 
+    resolution = 0, lty = 0, projection = "polyconic", 
+    myborder = 0, mar = c(0,0,0,0))
+  
+  # add a legend
+  inc <- (max - min) / 4
+  legend.text <- c(paste0(min, " % or less"),
+    paste0(min + inc, " %"),
+    paste0(min + 2 * inc, " %"),
+    paste0(min + 3 * inc, " %"),
+    paste0(max, " % or more"))
+  
+  legend("bottomleft", 
+    legend = legend.text, 
+    fill = shades[c(1, 25, 50, 75, 100)], 
+    title = legend.title)
+}
+```
+
+
+
+```{r}
+#R Shiny Tutorial code, edited for our purposes
+# Load data ----
+states <- states
+
+# User interface ----
+ui <- fluidPage(
+  titlePanel("Vaccine Census"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      helpText("Create demographic maps with 
+        information from 2017 CDC Data."),
+      
+      selectInput("var", 
+                  label = "Choose a variable to display",
+                  choices = c("Vaccination per State", "Poverty per State"),
+                  selected = "Vaccination per State"),
+      
+      sliderInput("range", 
+                  label = "Range of interest:",
+                  min = 0, max = 100, value = c(0, 100))
+    ),
+    
+    mainPanel(plotOutput("map"))
+  )
+)
+
+# Server logic ----
+server <- function(input, output) {
+  output$map <- renderPlot({
+    data <- switch(input$var, 
+                   "Vaccination per State" = states$PerVac,
+                   "Poverty per State" = states$PerPov)
+    
+    color <- switch(input$var, 
+                    "Vaccination per State" = "cyan",
+                   "Poverty per State" = "purple")
+    
+    legend <- switch(input$var, 
+                     "Vaccination per State" = "% Vaccinated",
+                     "Poverty per State" = "% Poverty")
+    
+    percent_map(data, color, legend, input$range[1], input$range[2])
+  })
+}
+
+# Run app ----
+shinyApp(ui, server)
+```
+
+

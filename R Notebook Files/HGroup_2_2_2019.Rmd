@@ -1,0 +1,98 @@
+---
+title: "Health_2/2/2019"
+output: html_notebook
+---
+
+Hello! Today we are going to be focusing on working with different data types in R and some applications.
+
+```{r}
+#Vectors and data types
+#Vectors are useful when working with a single variable or testing functions.
+c <- c("1", "2", "3", "4","5") #character vector
+n <- c(1,2,3,4,5) #numeric vector
+b <- c(TRUE, FALSE, TRUE, FALSE, TRUE) #boolean vector
+bc <- c("TRUE", "FALSE") #character vector
+combined <- c(c,n) #combining vectors
+
+#check data type with this function
+str()
+
+
+#What happens when you combine vectors of different data types?
+str(combined) 
+
+#other vector commands
+seq(1,5,1)
+rep(1,4)
+
+```
+
+```{r}
+#Matrices
+#The columns of an m x n matrix share the same data type. Useful for working with mathematical operations
+mat <- matrix(seq(1,9,1), nrow = 3, ncol = 3, byrow = TRUE)
+cmat <- matrix(as.character(seq(1,9,1)), nrow = 3, ncol = 3, byrow = TRUE)
+#indexing 
+#obtain second and third column values from matrix
+mat[,2:3] 
+mat[c(4:9)]
+mat[-c(1:3)]
+
+```
+
+```{r}
+#Data Frames - similar to matrix, but different columns can represent different data types
+df <- data.frame(n,c,b)
+
+#examine data frame
+str(df)
+summary(df)
+
+#Factor: similar to character data value, but useful in categorical plotting
+
+df$n #extract column from data frame
+
+#We will see how these data types and structures can be used in an example data set
+```
+
+```{r}
+#Example
+#load the sample data
+data("iris")
+
+#Examine data 
+str(iris)
+summary(iris)
+
+#we can see that "iris" is a dataframe, with five columns (4 numerical, 1 factor)
+#let's plot some variables: 
+plot(iris)
+#type "?plot()" to read more about the function's parameters
+
+#There are some trends that you can see in the data
+#closer look: 
+plot(iris$Sepal.Length, iris$Sepal.Width) #there are two clusters of data; we will go over ways to parameterize this observation in later meetings. If interested, read about interaction effects
+
+plot(iris$Petal.Length, iris$Petal.Width) #clearly linear trend, again another variable might explain clustering
+
+plot(iris$Species, iris$Petal.Length, ylab = "Petal Length") #clear difference between groups, can use anova test to check for significant difference between species
+
+```
+
+```{r}
+#modeling data
+data("cars")
+
+#Examine data
+str(cars)
+summary(cars) # data frame with two columns (2 numerical)
+plot(cars, main  = "Distance to Stop vs Car Speed") # linear trend, with larger variance at higher car speed
+
+#create a linear model, get parameters 
+linear <- lm(cars$dist ~ cars$speed)
+linear
+
+#check for normality, QQ plot
+plot(linear)
+
+```

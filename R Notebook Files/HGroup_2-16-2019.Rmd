@@ -1,0 +1,36 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+Hey everyone! Today we will be looking at the data and trying to look for trends within the data through exploratory analysis using graphs/charts. Other advanced methods of exploratory analysis that might be useful:
+Dimensionality reduction (PCA): http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-r-prcomp-vs-princomp/
+
+```{r}
+#Please download the NISPUF17 data from the CDC website: https://www.cdc.gov/vaccines/imz-managers/nis/datasets.html
+CDC2017 <- NISPUF17
+#potential helpful variables: ESTIAP17, INCPOV1 (INCQ298A) NUMFLU
+```
+
+```{r}
+#demographic variables:
+#age of children
+require(ggplot2)
+ggplot(CDC2017, aes(as.factor(AGEGRP))) + geom_bar(color = "light blue", fill = "light blue") + xlab("1 = 19-23mo, 2 = 24-29mo, 3 = 30-35mo")
+
+#family income
+ggplot(CDC2017, aes(as.factor(INCQ298A))) + geom_bar(color = "blue", fill = "blue") + xlab("family income")
+
+#barplots can be used for variables such as insurance status (INS_STAT2_I,INS_BREAK_I), 
+
+ggplot(data = CDC2017, aes(as.factor(INCQ298A), P_NUMFLU), color = INS_STAT2_I) + geom_jitter()
+#the scatterplot might be difficult to interpret, but there seems to be higher rates of child vaccination for families of higher income.
+summary(aov(CDC2017$P_NUMFLU~as.factor(CDC2017$INCQ298A))) #anova test
+
+#intro to dplyr: https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf
+require(dplyr) 
+states <- count(CDC2017,ESTIAP17) #counts the frequency of individuals in each state
+vacperstate  <- CDC2017 %>%
+                filter(P_NUMFLU >= 1) %>%
+                count(ESTIAP17)
+#try plotting the number of flu vaccinations (P_NUMFLU) vs other variables, and using interaction effect models to find potential trends
+```

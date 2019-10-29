@@ -1,0 +1,62 @@
+---
+title: "HGroup_2-9-2019"
+output: html_notebook
+---
+
+Hello! Today we are going to be going over linear regression and its properties, as well as intro to packages in Tidyverse and an introduction to R Shiny
+```{r}
+#please install tidyverse by deleting "#" and loading install.packages() below
+#install.packages("tidyverse")
+require(ggplot2)
+
+#last time, we made a linear model for the Cars dataset. Let's take a closer look:
+data("cars")
+#Use ggplot2 - check out: https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf
+ggplot(data = cars, aes(speed, dist)) + geom_point()
+
+#create a linear model, get parameters 
+linear <- lm(cars$dist ~ cars$speed)
+linear
+
+#we checked the residual and QQ plots last time and saw that variation in stopping distance increases as car speed increases. Let's look at the parameters of our linear model
+
+summary(linear)
+# interpret t value, Pr(>|t|), R-squared, F statistic
+
+#Because there might be non-linearity explaining the variability, we will try fitting polynomial parameters to the data
+summary(lm(dist ~ poly(speed, 2, raw=TRUE), data = cars)) #interpret
+
+```
+
+```{r}
+#interaction effects
+#previously, we thought there might be an interaction effect that caused clustering 
+data("iris")
+
+#for the sake of comparison, let's try fitting a standard linear model
+ggplot(data = iris, aes(Sepal.Length, Sepal.Width)) + geom_point() +  geom_smooth(method = "lm") 
+summary(lm(Sepal.Width ~ Sepal.Length, data = iris))
+# not really a good fit...
+```
+
+```{r}
+#let's try again with an interaction model
+ggplot(data = iris, aes(Sepal.Length, Sepal.Width, color = Species)) + geom_point() +  stat_smooth(method = "lm") 
+summary(lm(Sepal.Width ~ Sepal.Length*Species, data = iris))
+#Speciesversicolor, Speciesvirginica = different y intercepts based on Factor variable Species
+
+#compare the two models 
+anova(lm(Sepal.Width ~ Sepal.Length, data = iris), lm(Sepal.Width ~ Sepal.Length*Species, data = iris))
+#species is statistically significant.
+```
+
+```{r}
+#r shiny introduction
+#http://rstudio.github.io/shiny/tutorial/#hello-shiny
+install.packages("shiny")
+require(shiny)
+
+#example app
+runExample("01_hello")
+
+```

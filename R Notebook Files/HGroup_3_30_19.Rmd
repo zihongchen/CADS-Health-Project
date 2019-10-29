@@ -1,0 +1,36 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+Hello! Today we will be introducing ourselves to Leaflet, which is an open-source JavaScript set of libraries for interactive maps. You can find more information here: https://rstudio.github.io/leaflet/
+
+The code is very similar to the one from our last meeting, since our goal is to integrate Leaflet with R Shiny. 
+
+```{r}
+require(usmap)
+require(maps)
+require(leaflet)
+require(dplyr)
+#install.packages("usmap")
+percent_map <- function(var, shade, legend.title) {
+
+  #generate vector of fill colors for map
+  shades <- colorRampPalette(c("white", shade))(100)
+  percents <- var
+  fills <- shades[percents]
+  
+  #color palette for legend
+  pal <- colorNumeric(palette = shades, domain = percents)
+
+ #create map
+ data <- map("state", fill = TRUE, col = fills)
+    #leaflet parameters
+    leaflet(data = data) %>% 
+    addTiles() %>%
+    addPolygons(fillColor = fills, stroke = FALSE, fillOpacity = 1) %>%
+    addLegend("bottomleft", pal = pal , values = percents, title = legend.title, opacity = 0.8)
+}
+#plot map
+percent_map(states$PerVac,"navy","PerVac")
+percent_map(states$PerPov, "green","PerPov")
+```
